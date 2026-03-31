@@ -1,0 +1,15 @@
+{
+  "name": "litenote",
+  "private": true,
+  "engines": {
+    "node": ">=18.18.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:web": "pnpm --filter @litenote/web dev",
+    "dev:api": "pnpm --filter @litenote/api dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint"
+  }
+}
