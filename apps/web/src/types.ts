@@ -7,6 +7,12 @@ export type AppView =
 export type AppLanguage = "zh" | "en";
 export type NoteMood = "calm" | "focused" | "bright" | "reflective";
 export type NoteStatus = "draft" | "published";
+export type JournalInspectorTab = "entry-info" | "visual-assets";
+export type JournalFontMode = "editorial" | "modern";
+export type JournalAlignMode = "left" | "center";
+export type JournalDensityMode = "comfortable" | "immersive";
+export type PreviewZoomLevel = 100 | 125 | 150;
+export type WorkshopTab = "editor" | "history" | "variables";
 
 export interface Note {
   id: string;
