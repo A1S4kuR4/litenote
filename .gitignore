@@ -35,3 +35,4 @@ memory/
 .tasks/
 apps/api/data/litenote-db.json
 packages/core/
+AGENTS.md
