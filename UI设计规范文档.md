@@ -1,5 +1,9 @@
 # LiteNote UI 设计规范文档
 
+> **文档定位**  
+> 本文档定义的是 LiteNote 的视觉语言与交互风格。  
+> 当前前端已经使用 React + Tailwind CSS v4 + CSS 变量落地，因此本规范应被理解为“设计目标与实现约束”，而不是旧实现策略的限制性说明。
+
 ## 一、设计系统概述
 
 ### 1.1 设计原则
@@ -32,48 +36,63 @@
 
 #### 主色板（跟随主题变化）
 
-**清晨主题（默认）**
+**当前默认主题（与当前前端实现对齐）**
 ```
 主色系统：
+├─ 主色：#59624F（苔绿）
+├─ 主色-浅：#DDE6CE
+├─ 主色-深：#4D5643
+│
+├─ 辅助色 1：#78584A（暖棕）
+├─ 辅助色 1-浅：#FFDBCD
+├─ 辅助色 1-深：#55392C
+│
+├─ 辅助色 2：#745C00（复古金）
+├─ 辅助色 2-浅：#F5CE53
+├─ 辅助色 2-深：#584500
+│
+└─ 点缀错误色：#A73B21（陶土红）
+   ├─ 浅：#FD795A
+   └─ 深：#6E1400
+```
+
+**可扩展主题方向（早期方案示例）**
+```
+早期清晨主题草案：
 ├─ 主色：#5B9BD5（信任蓝）
-├─ 主色-浅：#E8F1F8
-├─ 主色-深：#2E5E8E
-│
 ├─ 辅助色 1：#FFB74D（温暖橙）
-├─ 辅助色 1-浅：#FFF3E0
-├─ 辅助色 1-深：#E89B1F
-│
 ├─ 辅助色 2：#81C784（生机绿）
-├─ 辅助色 2-浅：#E8F5E9
-├─ 辅助色 2-深：#4CAF50
-│
 └─ 辅助色 3：#E57373（温柔红）
-   ├─ 辅助色 3-浅：#FFEBEE
-   └─ 辅助色 3-深：#D32F2F
+
+说明：
+├─ 该方案可继续作为未来主题包候选
+└─ 但不再代表当前仓库默认落地样式
 ```
 
 #### 中性色系统（跨主题统一）
 
 ```
 背景色：
-├─ 纯白：#FFFFFF
-├─ 背景浅：#F9F9F9
-├─ 背景中：#F5F5F5
-└─ 背景深：#EFEFEF
+├─ 背景基底：#F7F3EA
+├─ 页面背景：#FBF7EF ~ #FBF9F5
+├─ 卡片表面：rgba(255, 252, 247, 0.88)
+└─ 强表面：#FFFDFA
 
 文字色：
-├─ 正文：#212121（深灰黑）
-├─ 次文本：#757575（中灰）
-├─ 辅助文本：#BDBDBD（浅灰）
-└─ 禁用文本：#E0E0E0
+├─ 正文：#2F2A24（墨棕）
+├─ 次文本：#6D6359（暖灰棕）
+├─ 辅助文本：#948A7F（淡墨）
+└─ 反色正文：#F3FCE3
 
 边界线：
-├─ 强边界：#E0E0E0
-├─ 中边界：#EEEEEE
-└─ 弱边界：#F5F5F5
+├─ 主轮廓：#7A7B76
+├─ 变体轮廓：#B2B2AD
+└─ 柔和分隔：rgba(77, 60, 44, 0.10)
 ```
 
 #### 语义色系统（跨主题统一）
+
+> 语义色可以独立于主题主色存在，不要求与当前默认主题完全同色系，但应与整体纸页风格保持协调。
 
 ```
 功能色：
@@ -115,16 +134,11 @@
 ### 2.3 深色模式色彩适配
 
 ```
-深色模式（夜影主题）：
-├─ 背景基础：#121212
-├─ 表面层 1：#1E1E1E
-├─ 表面层 2：#2C2C2C
-├─ 表面层 3：#383838
-│
-├─ 主色：#5B9BD5（同，亮度调整为 90%）
-├─ 文字：#FFFFFF（白）
-├─ 次文本：#B0B0B0（浅灰）
-└─ 辅助文本：#808080（中灰）
+深色模式（未来候选主题）：
+├─ 当前代码尚未提供完整暗色 token 切换
+├─ 现阶段以亮色纸张主题为主
+├─ 后续可基于相同 token 结构扩展暗色模式
+└─ 暗色实现时应保持正文、表面层与主色对比度一致性
 ```
 
 ---
@@ -136,35 +150,35 @@
 #### 英文字体栈
 ```
 标题字体（Heading）：
-font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-特点：现代、清晰、适合标题
+font-family: 'Newsreader', 'Iowan Old Style', 'Palatino Linotype', serif;
+特点：更具纸页感与编辑感，适合标题与大段排版
 
 正文字体（Body）：
-font-family: 'Inter', 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-特点：易读、舒适、适合长文阅读
+font-family: 'Newsreader', 'Iowan Old Style', 'Palatino Linotype', serif;
+特点：阅读感柔和，适合当前 Journal / Workshop 的长文内容区
 
-代码字体（Monospace）：
-font-family: 'Fira Code', 'Consolas', monospace;
-特点：等宽、明确、适合代码
+标签/界面字体（Label / UI）：
+font-family: 'Inter', 'Segoe UI', sans-serif;
+特点：清晰、中性，适合导航、按钮、说明文字
 
-装饰字体（Display）：
-font-family: 'Caveat', 'Handwriting', cursive;
-特点：手写感、温暖、适合装饰元素
+现代替代字体（Modern Variant）：
+font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+特点：用于可切换的现代模式与对照排版
 ```
 
 #### 中文字体栈
 ```
 标题字体（Heading）：
-font-family: 'HarmonyOS Sans', '思源黑体', 'Microsoft YaHei', sans-serif;
-特点：现代、有力、适合标题
+font-family: 'Newsreader', '思源宋体', 'PingFang SC', serif;
+特点：更贴近纸页与编辑排版气质
 
 正文字体（Body）：
-font-family: 'PingFang SC', '思源宋体', 'Microsoft YaHei', sans-serif;
-特点：易读、温暖、适合长文阅读
+font-family: 'Newsreader', '思源宋体', 'PingFang SC', serif;
+特点：长文阅读更温和，适合当前默认主题
 
-代码字体（Monospace）：
-font-family: 'JetBrains Mono', 'Consolas', monospace;
-特点：清晰、等宽、适合代码
+标签/界面字体（Label / UI）：
+font-family: 'Inter', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+特点：适合按钮、导航、状态和辅助说明
 ```
 
 ### 3.2 字体大小与行高
@@ -840,41 +854,44 @@ LiteNote Design System/
 
 ### 12.2 前端实现
 
+> 当前仓库实现采用 **Tailwind CSS v4 + CSS 变量 + 全局样式文件** 的组合方式。
+
 ```
 CSS 变量定义：
 :root {
-  /* 颜色 */
-  --color-primary: #5B9BD5;
-  --color-success: #4CAF50;
-  
   /* 字体 */
-  --font-display: 'Inter', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  
-  /* 间距 */
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  
-  /* 圆角 */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  
-  /* 阴影 */
-  --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
-  
-  /* 过渡 */
-  --transition-fast: 100ms ease-out;
-}
+  --font-headline: "Newsreader", serif;
+  --font-body: "Newsreader", serif;
+  --font-label: "Inter", sans-serif;
 
-/* 深色模式 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-primary: #81B1FF;
-    --bg-primary: #121212;
-  }
+  /* 表面 */
+  --color-background: #fbf9f5;
+  --surface-base: #f7f3ea;
+  --surface-card: rgba(255, 252, 247, 0.88);
+
+  /* 文字 */
+  --ink-strong: #2f2a24;
+  --ink-soft: #6d6359;
+
+  /* 强调色 */
+  --color-primary: #59624f;
+  --accent: #5b6450;
+  --accent-strong: #41483a;
+
+  /* 辅助色 */
+  --color-secondary: #78584a;
+  --color-tertiary: #745c00;
+  --color-error: #a73b21;
+
+  /* 结构 */
+  --line-soft: rgba(77, 60, 44, 0.1);
+  --radius-md: 24px;
+  --radius-lg: 32px;
+  --shadow-soft: 0 18px 50px rgba(62, 45, 29, 0.08);
 }
 ```
+
+可扩展主题方向仍可在不改变 token 结构的前提下替换颜色集与字体集。
 
 ---
 
@@ -886,19 +903,20 @@ CSS 变量定义：
 
 ```
 核心视觉（必须）：
-├─ 清晨主题配色方案（主色 #5B9BD5 + 中性色）
-├─ 纸张质感背景（柔和浅灰 #F9F9F9 / 纹理可选）
-├─ 中英文字体栈（Inter + 思源黑体系列）
-├─ 4px 间距网格系统
-├─ 基础圆角和阴影（sm/md 两级）
+├─ 纸张感亮色主题（米白背景 + 苔绿主色 + 暖棕辅助色）
+├─ 纸张质感背景与柔和渐变
+├─ 标题/正文衬线排版（Newsreader 主导）+ UI 标签字体（Inter）
+├─ 较宽松的留白与卡片间距
+├─ 大圆角与柔和阴影（24px / 32px）
 ├─ 卡片式笔记列表
-└─ 基础深色模式支持
+└─ 统一的手账风层次感与材质感
 
 可延迟到 Phase 1b 的元素：
 ├─ 完整的 6 套主题
+├─ 运行时深色模式
 ├─ 装饰字体（手写体）
-├─ 纸张纹理细节
-├─ 翻页动画
+├─ 更复杂的纸张纹理细节
+├─ 翻页与页面切换动画
 ├─ 复杂的装饰组件（贴纸、边框等）
 └─ 完整的无障碍检查
 ```
@@ -906,17 +924,18 @@ CSS 变量定义：
 ### 13.2 CSS 实现策略
 
 ```
-本项目统一使用 CSS 变量 + Vanilla CSS 实现样式系统（不使用 Tailwind CSS）：
-├─ 所有设计 Token 定义为 CSS 自定义属性（:root）
-├─ 主题切换通过切换 CSS 变量实现
-├─ 组件样式使用 Vue Scoped CSS
-├─ 深色模式通过 prefers-color-scheme 媒体查询
-└─ 详见「十二、设计资源与工具 > 前端实现」
+本项目当前采用 Tailwind CSS v4 + CSS 变量 + 全局样式文件协作的实现策略：
+├─ 设计 Token 继续定义为 CSS 自定义属性（`:root` / `@theme`）
+├─ 主题切换优先通过颜色、字体、阴影等变量驱动
+├─ 组件布局与状态样式主要通过 Tailwind 类名表达
+├─ 公共视觉规则与辅助类集中在全局样式文件中
+├─ 深色模式和主题适配仍可通过变量与媒体查询实现
+└─ 详见 `apps/web/src/styles.css` 与 `apps/web/vite.config.ts`
 
-理由：
-├─ 与本文档已有的设计 Token 定义 1:1 对应
-├─ 无额外构建依赖，保持轻量
-└─ 主题系统天然支持运行时切换
+这样做的原因：
+├─ 保留设计 Token 与主题系统的一致性
+├─ 兼顾开发效率与视觉可控性
+└─ 能更自然地与当前 React 组件结构协作
 ```
 
 ---
@@ -953,5 +972,5 @@ CSS 变量定义：
 
 ---
 
-**文档版本**: 2.0  
-**最后更新**: 2026 年 3 月 30 日
+**文档版本**: 3.0  
+**最后更新**: 2026 年 4 月 1 日

@@ -4,86 +4,135 @@
 
 > **适用阶段说明**
 >
-> 本文档描述的 RESTful API 为 **Phase 3+（云端可选版本）** 的设计规划。
-> MVP 阶段（Phase 1a/1b）采用纯本地架构，不依赖云端 API，
-> 本地 CRUD 操作通过 Tauri IPC Commands 实现（详见下方「本地 API 层」章节）。
+> 本文档分为两层内容：
+> 1. **当前已实现 API**：基于 Express 的本地开发服务
+> 2. **未来规划 API**：Phase 3+ 可能采用的云端 `/v1/*` 方案
+>
+> 如果你要对接当前仓库，请优先阅读本节 1.1 ~ 1.4；后续章节主要是未来规划。
 
-### 1.1 设计原则
+### 1.1 当前实现概览
 
-- **RESTful 风格**：使用 HTTP 方法和资源路径表示操作
-- **版本管理**：使用 `/v1/` 前缀便于未来升级
-- **一致性**：统一的响应格式、错误处理、分页方式
-- **安全性**：支持认证、授权、速率限制
-- **可扩展性**：易于添加新端点，支持字段选择
+- 服务形态：本地 Express API
+- 默认地址：`http://localhost:8787`
+- 前端访问方式：通过 Vite 代理访问 `/api`
+- 当前不包含认证、分页、版本前缀、统一响应包裹等云端能力
+- 当前实现以 `apps/api/src/index.ts`、`apps/api/src/store.ts`、`apps/api/src/types.ts` 为准
 
-### 1.2 基本信息
+### 1.2 当前接口列表
 
 ```
-API 基础 URL: https://api.litenote.dev/v1
-
-请求格式: application/json
-响应格式: application/json
-
-字符编码: UTF-8
-时间格式: ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)
+GET  /api/health
+GET  /api/dashboard
+POST /api/notes
+PATCH /api/notes/:id
+POST /api/notes/:id/favorite
+POST /api/notes/:id/archive
 ```
 
-### 1.3 本地 API 层（Phase 1 适用）
+### 1.3 当前请求与响应说明
 
-MVP 阶段的数据操作通过 Tauri IPC Commands 完成，前端通过 `@tauri-apps/api/core` 的 `invoke` 方法调用 Rust 后端，不依赖任何远程服务。
+#### `GET /api/health`
 
-#### 核心 IPC Commands
+返回服务状态：
 
-```typescript
-// 笔记操作
-invoke('create_note', { title, content, categoryId? })  → Note
-invoke('get_note', { id })                               → Note
-invoke('list_notes', { page, limit, search?, categoryId? }) → Note[]
-invoke('update_note', { id, title?, content? })          → Note
-invoke('delete_note', { id })                            → void
-invoke('toggle_favorite', { id })                        → Note
-
-// 分类操作
-invoke('create_category', { name, color, icon })         → Category
-invoke('list_categories')                                → Category[]
-invoke('update_category', { id, name?, color? })         → Category
-invoke('delete_category', { id })                        → void
-
-// 标签操作
-invoke('create_tag', { name, color? })                   → Tag
-invoke('list_tags')                                      → Tag[]
-invoke('delete_tag', { id })                             → void
-invoke('add_tag_to_note', { noteId, tagId })             → void
-invoke('remove_tag_from_note', { noteId, tagId })        → void
-
-// 搜索
-invoke('search_notes', { query, limit? })                → Note[]
-
-// 导出
-invoke('export_note', { id, format: 'md' | 'html' })    → string
-invoke('export_all', { format, archivePath })            → string
-
-// 设置
-invoke('get_settings')                                   → UserSettings
-invoke('update_settings', { settings })                  → UserSettings
+```json
+{
+  "status": "ok",
+  "service": "litenote-api",
+  "timestamp": "2026-04-01T10:00:00.000Z"
+}
 ```
 
-#### Web 版本（Phase 1a）
+#### `GET /api/dashboard`
 
-Web 版使用与 IPC Commands 相同接口签名的 IndexedDB 服务层，确保 Web → 桌面迁移时前端代码无需修改：
+返回当前前端首页/工作台所需的聚合数据，包含：
 
-```typescript
-// apps/web/src/services/local-db.ts
-// 实现与 Tauri IPC Commands 相同的函数签名
-// 底层使用 IndexedDB (通过 Dexie.js 或 idb 库)
-export const createNote = async (params) => { /* IndexedDB 操作 */ }
-export const getNote = async (id) => { /* IndexedDB 操作 */ }
-// ...
+- `user`
+- `spotlight`
+- `writingTip`
+- `stats`
+- `notes`
+- `templates`
+- `assets`
+- `workshopPresets`
+
+#### `POST /api/notes`
+
+请求体：
+
+```json
+{
+  "title": "New editorial entry",
+  "body": "",
+  "tags": ["travel", "spring"],
+  "mood": "calm",
+  "templateId": "botanical-reflection",
+  "status": "draft"
+}
 ```
+
+说明：
+
+- 所有字段都可选
+- 服务端会补齐默认值
+- `summary` 由服务端根据 `body` 自动生成
+- 响应为创建后的完整 `Note` 对象，状态码 `201`
+
+#### `PATCH /api/notes/:id`
+
+请求体支持部分字段更新：
+
+```json
+{
+  "title": "Updated title",
+  "body": "Updated body",
+  "tags": ["idea", "journal"],
+  "mood": "focused",
+  "templateId": "template-id",
+  "status": "published",
+  "isFavorite": true,
+  "isArchived": false
+}
+```
+
+说明：
+
+- 找不到笔记时返回 `404`
+- 错误体格式为：
+
+```json
+{
+  "message": "Note not found."
+}
+```
+
+#### `POST /api/notes/:id/favorite`
+
+- 切换 `isFavorite`
+- 成功时返回更新后的 `Note`
+- 找不到笔记时返回 `404`
+
+#### `POST /api/notes/:id/archive`
+
+- 将笔记标记为归档
+- 归档后该笔记不会出现在 `/api/dashboard` 的 `notes` 列表中
+- 成功时返回更新后的 `Note`
+
+### 1.4 当前数据与运行约束
+
+- 数据持久化文件：`apps/api/data/litenote-db.json`
+- 初次运行若文件不存在，会自动写入种子数据
+- 前端默认 API 基址：`/api`
+- Vite 代理目标：`http://localhost:8787`
 
 ---
 
-## 二、通用规范
+## 二、未来规划（Phase 3+ 云端 API）
+
+> 以下章节描述的是未来可能采用的云端 `/v1/*` RESTful 方案。  
+> 它们不是当前仓库已经实现的接口，也不应当被当作当前集成依据。
+
+---
 
 ### 2.1 HTTP 方法
 
@@ -1508,5 +1557,5 @@ GET /v1/version
 
 ---
 
-**文档版本**: 2.0  
-**最后更新**: 2026 年 3 月 30 日
+**文档版本**: 3.0  
+**最后更新**: 2026 年 4 月 1 日
