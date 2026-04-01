@@ -4,7 +4,6 @@ import {
   Archive,
   BookOpen,
   Heart,
-  Image as ImageIcon,
   Plus,
   Save,
   Settings2,
