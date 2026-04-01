@@ -1,0 +1,70 @@
+name: "Bug 报告"
+description: "报告一个可复现的问题，帮助我们尽快定位。"
+title: "[Bug] "
+labels:
+  - "bug"
+body:
+  - type: "textarea"
+    id: "summary"
+    attributes:
+      label: "问题概述"
+      description: "简要描述问题现象和影响。"
+      placeholder: "例如：保存笔记后提示成功，但刷新页面后内容丢失。"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "steps"
+    attributes:
+      label: "复现步骤"
+      description: "提供稳定、可重复的操作步骤。"
+      placeholder: |
+        1. 打开 ...
+        2. 点击 ...
+        3. 输入 ...
+        4. 观察到 ...
+    validations:
+      required: true
+  - type: "textarea"
+    id: "expected"
+    attributes:
+      label: "期望行为"
+      description: "你原本期望发生什么？"
+      placeholder: "例如：刷新后仍然保留刚刚保存的内容。"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "actual"
+    attributes:
+      label: "实际行为"
+      description: "实际发生了什么？"
+      placeholder: "例如：刷新后内容恢复到保存前的状态，没有报错提示。"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "evidence"
+    attributes:
+      label: "截图或录屏"
+      description: "如有帮助，请附上截图、录屏链接或关键日志。"
+      placeholder: "可粘贴图片、视频链接或错误信息。"
+    validations:
+      required: false
+  - type: "textarea"
+    id: "environment"
+    attributes:
+      label: "运行环境"
+      description: "请提供尽可能完整的环境信息。"
+      placeholder: |
+        - 设备/系统：
+        - 浏览器或 App 版本：
+        - Node.js / pnpm（如适用）：
+        - 发生时间：
+    validations:
+      required: true
+  - type: "textarea"
+    id: "extra"
+    attributes:
+      label: "补充信息"
+      description: "其他可能帮助排查的信息。"
+      placeholder: "例如：是否稳定复现、是否只在特定账号下出现等。"
+    validations:
+      required: false

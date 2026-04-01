@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "阅读项目说明"
+    url: "https://github.com/A1S4kuR4/litenote/blob/main/README.md"
+    about: "提交 Issue 前，请先查看项目概览、启动方式和当前阶段说明。"
+  - name: "查看开发者指南"
+    url: "https://github.com/A1S4kuR4/litenote/blob/main/%E5%BC%80%E5%8F%91%E8%80%85%E6%8C%87%E5%8D%97.md"
+    about: "如需了解工程结构、开发流程或协作规范，请先阅读开发者指南。"
