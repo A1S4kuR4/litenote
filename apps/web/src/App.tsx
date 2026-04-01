@@ -1,9 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import {
   archiveNote,
   createNote,
+  fetchAssets,
   fetchDashboard,
+  fetchNote,
+  fetchNotes,
+  fetchTemplates,
+  fetchWorkshopPresets,
   toggleFavorite,
   updateNote,
 } from "./api";
@@ -18,6 +23,7 @@ import { WorkshopView } from "./views/WorkshopView";
 import type {
   AppLanguage,
   AppView,
+  Asset,
   DashboardResponse,
   JournalAlignMode,
   JournalDensityMode,
@@ -26,7 +32,10 @@ import type {
   Note,
   NoteDraft,
   NoteMood,
+  NoteSummary,
   PreviewZoomLevel,
+  Template,
+  WorkshopPreset,
 } from "./types";
 
 const LANGUAGE_STORAGE_KEY = "litenote-language";
@@ -63,10 +72,60 @@ function readInitialLanguage(): AppLanguage {
   return stored === "en" ? "en" : "zh";
 }
 
+function sortDashboardNotes(notes: Note[]): Note[] {
+  return [...notes].sort(
+    (left, right) =>
+      new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+  );
+}
+
+function buildDashboardStats(
+  notes: Note[],
+  templateCount: number,
+  assetCount: number,
+) {
+  return {
+    totalNotes: notes.length,
+    publishedNotes: notes.filter((note) => note.status === "published").length,
+    favoriteNotes: notes.filter((note) => note.isFavorite).length,
+    templates: templateCount,
+    assets: assetCount,
+  };
+}
+
+function syncDashboardWithNote(
+  current: DashboardResponse | null,
+  note: Note,
+): DashboardResponse | null {
+  if (!current) {
+    return current;
+  }
+
+  const existingNotes = current.notes.filter((currentNote) => currentNote.id !== note.id);
+  const nextNotes = note.isArchived
+    ? existingNotes
+    : sortDashboardNotes([note, ...existingNotes]);
+
+  return {
+    ...current,
+    notes: nextNotes,
+    stats: buildDashboardStats(
+      nextNotes,
+      current.templates.length,
+      current.assets.length,
+    ),
+  };
+}
+
 export default function App() {
   const [view, setView] = useState<AppView>("discover");
   const [language, setLanguage] = useState<AppLanguage>(readInitialLanguage);
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
+  const [notes, setNotes] = useState<NoteSummary[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [workshopPresets, setWorkshopPresets] = useState<WorkshopPreset[]>([]);
+  const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState("");
   const [draft, setDraft] = useState<NoteDraft | null>(null);
   const [search, setSearch] = useState("");
@@ -85,6 +144,10 @@ export default function App() {
   const [selectedPresetId, setSelectedPresetId] = useState("");
   const [previewZoom, setPreviewZoom] = useState<PreviewZoomLevel>(100);
   const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
+  const deferredSearch = useDeferredValue(search);
+  const hasLoadedWorkspaceRef = useRef(false);
+  const notesRequestRef = useRef(0);
+  const noteRequestRef = useRef(0);
 
   const t = messages[language];
 
@@ -93,26 +156,133 @@ export default function App() {
     document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
   }, [language]);
 
-  const loadDashboard = async (preferredNoteId?: string) => {
+  const clearActiveNote = () => {
+    setSelectedNoteId("");
+    setActiveNote(null);
+    setDraft(null);
+  };
+
+  const loadNoteById = async (noteId: string) => {
+    if (!noteId) {
+      clearActiveNote();
+      return null;
+    }
+
+    const requestId = ++noteRequestRef.current;
+
+    try {
+      const note = await fetchNote(noteId);
+
+      if (requestId !== noteRequestRef.current) {
+        return note;
+      }
+
+      setSelectedNoteId(note.id);
+      setActiveNote(note);
+      setDraft(toDraft(note));
+      setErrorKey("");
+      return note;
+    } catch {
+      if (requestId === noteRequestRef.current) {
+        setErrorKey("apiUnavailable");
+      }
+
+      return null;
+    }
+  };
+
+  const loadVisibleNotes = async (
+    query: string,
+    options: {
+      preferredNoteId?: string;
+      syncSelection?: boolean;
+    } = {},
+  ) => {
+    const requestId = ++notesRequestRef.current;
+
+    try {
+      const nextNotes = await fetchNotes({
+        query: query.trim() || undefined,
+      });
+
+      if (requestId !== notesRequestRef.current) {
+        return nextNotes;
+      }
+
+      setNotes(nextNotes);
+      setErrorKey("");
+
+      if (!options.syncSelection) {
+        return nextNotes;
+      }
+
+      const candidateId = options.preferredNoteId ?? selectedNoteId;
+      if (candidateId && nextNotes.some((note) => note.id === candidateId)) {
+        if (activeNote?.id !== candidateId) {
+          await loadNoteById(candidateId);
+        } else {
+          setSelectedNoteId(candidateId);
+        }
+
+        return nextNotes;
+      }
+
+      const fallbackNoteId = nextNotes[0]?.id ?? "";
+      if (fallbackNoteId) {
+        await loadNoteById(fallbackNoteId);
+      } else {
+        clearActiveNote();
+      }
+
+      return nextNotes;
+    } catch {
+      if (requestId === notesRequestRef.current) {
+        setErrorKey("apiUnavailable");
+      }
+
+      return [];
+    }
+  };
+
+  const loadWorkspace = async (preferredNoteId?: string) => {
     setLoading(true);
     setErrorKey("");
 
     try {
-      const nextDashboard = await fetchDashboard();
+      const [
+        nextDashboard,
+        nextTemplates,
+        nextAssets,
+        nextWorkshopPresets,
+        nextNotes,
+      ] = await Promise.all([
+        fetchDashboard(),
+        fetchTemplates(),
+        fetchAssets(),
+        fetchWorkshopPresets(),
+        fetchNotes({
+          query: deferredSearch.trim() || undefined,
+        }),
+      ]);
+
       setDashboard(nextDashboard);
+      setTemplates(nextTemplates);
+      setAssets(nextAssets);
+      setWorkshopPresets(nextWorkshopPresets);
+      setNotes(nextNotes);
+      hasLoadedWorkspaceRef.current = true;
 
-      const fallbackNoteId = nextDashboard.notes[0]?.id ?? "";
       const currentNoteId = preferredNoteId ?? selectedNoteId;
-      const nextSelectedNoteId =
-        nextDashboard.notes.find((note) => note.id === currentNoteId)?.id ??
-        fallbackNoteId;
+      const fallbackNoteId =
+        nextNotes.find((note) => note.id === currentNoteId)?.id ??
+        nextNotes[0]?.id ??
+        "";
 
-      setSelectedNoteId(nextSelectedNoteId);
-
-      const selectedNote = nextDashboard.notes.find(
-        (note) => note.id === nextSelectedNoteId,
-      );
-      setDraft(selectedNote ? toDraft(selectedNote) : null);
+      if (fallbackNoteId) {
+        await loadNoteById(fallbackNoteId);
+      } else {
+        clearActiveNote();
+      }
     } catch {
       setErrorKey("apiUnavailable");
     } finally {
@@ -121,52 +291,41 @@ export default function App() {
   };
 
   useEffect(() => {
-    void loadDashboard();
+    void loadWorkspace();
   }, []);
 
   useEffect(() => {
-    if (!dashboard?.workshopPresets.length) {
+    if (!hasLoadedWorkspaceRef.current) {
+      return;
+    }
+
+    void loadVisibleNotes(deferredSearch);
+  }, [deferredSearch]);
+
+  useEffect(() => {
+    if (!workshopPresets.length) {
       setSelectedPresetId("");
       return;
     }
 
     setSelectedPresetId((current) =>
-      dashboard.workshopPresets.some((preset) => preset.id === current)
+      workshopPresets.some((preset) => preset.id === current)
         ? current
-        : dashboard.workshopPresets[0].id,
+        : workshopPresets[0].id,
     );
-  }, [dashboard]);
+  }, [workshopPresets]);
 
-  const activeNote = useMemo(
-    () => dashboard?.notes.find((note) => note.id === selectedNoteId) ?? null,
-    [dashboard, selectedNoteId],
-  );
-
-  const visibleNotes = useMemo(() => {
-    if (!dashboard) {
-      return [];
-    }
-
-    const keyword = search.trim().toLowerCase();
-    if (!keyword) {
-      return dashboard.notes;
-    }
-
-    return dashboard.notes.filter((note) =>
-      [note.title, note.summary, note.tags.join(" ")]
-        .join(" ")
-        .toLowerCase()
-        .includes(keyword),
-    );
-  }, [dashboard, search]);
-
-  const activeTemplate = dashboard?.templates.find(
-    (template) => template.id === (draft?.templateId ?? activeNote?.templateId),
+  const activeTemplate = useMemo(
+    () =>
+      templates.find(
+        (template) => template.id === (draft?.templateId ?? activeNote?.templateId),
+      ) ?? null,
+    [activeNote, draft, templates],
   );
 
   const activePreset =
-    dashboard?.workshopPresets.find((preset) => preset.id === selectedPresetId) ??
-    dashboard?.workshopPresets[0] ??
+    workshopPresets.find((preset) => preset.id === selectedPresetId) ??
+    workshopPresets[0] ??
     null;
 
   const statusLabel = (status: Note["status"]) =>
@@ -174,12 +333,14 @@ export default function App() {
 
   const moodLabel = (mood: NoteMood) => t.moods[mood];
 
-  const handleSelectNote = (note: Note) => {
+  const handleSelectNote = (note: NoteSummary) => {
     setView("journal");
     setSelectedNoteId(note.id);
-    setDraft(toDraft(note));
+    setActiveNote(null);
+    setDraft(null);
     setJournalInspectorTab("entry-info");
     setJournalInspectorVisible(true);
+    void loadNoteById(note.id);
   };
 
   const handleCreateNote = async (templateId?: string) => {
@@ -191,9 +352,14 @@ export default function App() {
         body: "",
         mood: "calm",
         status: "draft",
-        templateId: templateId ?? dashboard?.templates[0]?.id,
+        templateId: templateId ?? templates[0]?.id,
       });
-      await loadDashboard(note.id);
+
+      setSelectedNoteId(note.id);
+      setActiveNote(note);
+      setDraft(toDraft(note));
+      setDashboard((current) => syncDashboardWithNote(current, note));
+      await loadVisibleNotes(deferredSearch);
       setView("journal");
       setJournalInspectorTab("entry-info");
       setJournalInspectorVisible(true);
@@ -213,8 +379,11 @@ export default function App() {
     setErrorKey("");
 
     try {
-      await updateNote(activeNote.id, draft);
-      await loadDashboard(activeNote.id);
+      const note = await updateNote(activeNote.id, draft);
+      setActiveNote(note);
+      setDraft(toDraft(note));
+      setDashboard((current) => syncDashboardWithNote(current, note));
+      await loadVisibleNotes(deferredSearch);
     } catch {
       setErrorKey("saveFailed");
     } finally {
@@ -230,8 +399,11 @@ export default function App() {
     setSaving(true);
 
     try {
-      await toggleFavorite(activeNote.id);
-      await loadDashboard(activeNote.id);
+      const note = await toggleFavorite(activeNote.id);
+      setActiveNote(note);
+      setDraft(toDraft(note));
+      setDashboard((current) => syncDashboardWithNote(current, note));
+      await loadVisibleNotes(deferredSearch);
     } catch {
       setErrorKey("favoriteFailed");
     } finally {
@@ -247,8 +419,9 @@ export default function App() {
     setSaving(true);
 
     try {
-      await archiveNote(activeNote.id);
-      await loadDashboard();
+      const note = await archiveNote(activeNote.id);
+      setDashboard((current) => syncDashboardWithNote(current, note));
+      await loadVisibleNotes(deferredSearch, { syncSelection: true });
     } catch {
       setErrorKey("archiveFailed");
     } finally {
@@ -298,7 +471,7 @@ export default function App() {
       composeLabel={saving ? t.actions.working : t.actions.composeNew}
       navLabels={t.nav}
       onCreateNote={() => void handleCreateNote()}
-      onRefresh={() => void loadDashboard(selectedNoteId)}
+      onRefresh={() => void loadWorkspace(selectedNoteId)}
       onViewChange={setView}
       refreshLabel={t.actions.refresh}
       saving={saving}
@@ -337,7 +510,8 @@ export default function App() {
 
           {view === "library" ? (
             <LibraryView
-              dashboard={dashboard}
+              assets={assets}
+              templates={templates}
               onApplyTemplate={(templateId) => void handleApplyTemplate(templateId)}
               onFocusAssets={handleFocusAssets}
               t={t}
@@ -349,7 +523,7 @@ export default function App() {
               activePreset={activePreset}
               previewRefreshKey={previewRefreshKey}
               previewZoom={previewZoom}
-              presets={dashboard.workshopPresets}
+              presets={workshopPresets}
               selectedPresetId={selectedPresetId}
               setSelectedPresetId={setSelectedPresetId}
               onRefreshPreview={() =>
@@ -364,8 +538,8 @@ export default function App() {
           {view === "journal" ? (
             <JournalView
               activeNote={activeNote}
-              activeTemplate={activeTemplate ?? null}
-              dashboard={dashboard}
+              activeTemplate={activeTemplate}
+              assets={assets}
               draft={draft}
               formatDate={formatDate}
               journalAlignMode={journalAlignMode}
@@ -382,9 +556,11 @@ export default function App() {
               setJournalFontMode={setJournalFontMode}
               setJournalInspectorTab={setJournalInspectorTab}
               setJournalInspectorVisible={setJournalInspectorVisible}
+              spotlightImage={dashboard.spotlight.image}
               statusLabel={statusLabel}
               t={t}
-              visibleNotes={visibleNotes}
+              templates={templates}
+              visibleNotes={notes}
               onArchive={() => void handleArchive()}
               onCreateNote={() => void handleCreateNote()}
               onSave={() => void handleSave()}

@@ -2,24 +2,26 @@ import { useState } from "react";
 import { LayoutGrid, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { cn } from "../lib/utils";
 import type { Messages } from "../i18n";
-import type { DashboardResponse } from "../types";
+import type { Asset, Template } from "../types";
 
 interface LibraryViewProps {
-  dashboard: DashboardResponse;
+  assets: Asset[];
+  templates: Template[];
   onApplyTemplate: (templateId: string) => void;
   onFocusAssets: () => void;
   t: Messages;
 }
 
 export function LibraryView({
-  dashboard,
+  assets,
+  templates,
   onApplyTemplate,
   onFocusAssets,
   t,
 }: LibraryViewProps) {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const categories = Array.from(
-    new Set(dashboard.assets.map((asset) => asset.category)),
+    new Set(assets.map((asset) => asset.category)),
   );
 
   return (
@@ -50,7 +52,7 @@ export function LibraryView({
       <div className="flex w-full items-start gap-0 transition-all duration-700 ease-in-out">
         <div className="flex-1 min-w-0 transition-all duration-700">
           <div className="library-grid-tiled w-full">
-          {dashboard.assets.map((asset) => (
+          {assets.map((asset) => (
             <article className="library-asset-card group relative overflow-hidden rounded-3xl" key={asset.id}>
               <img alt={asset.name} src={asset.image} className="w-full h-auto group-hover:scale-110 transition-transform duration-700" />
               <div className="library-asset-overlay absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 bg-gradient-to-t from-black/80 via-black/20 to-transparent text-white">
@@ -87,7 +89,7 @@ export function LibraryView({
           </div>
           
           <div className={cn("library-template-stack grid gap-4 overflow-y-auto no-scrollbar max-h-[calc(100vh-320px)] transition-opacity duration-200", isSidebarVisible ? "opacity-100 delay-600" : "opacity-0")}>
-            {dashboard.templates.map((template) => (
+            {templates.map((template) => (
               <article className="library-template-card" key={template.id}>
                 <img alt={template.name} src={template.previewImage} />
                 <div className="library-template-copy">
