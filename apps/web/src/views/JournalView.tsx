@@ -13,7 +13,7 @@ import type { Messages } from "../i18n";
 import { cn } from "../lib/utils";
 import type {
   AppLanguage,
-  DashboardResponse,
+  Asset,
   JournalAlignMode,
   JournalDensityMode,
   JournalFontMode,
@@ -21,13 +21,14 @@ import type {
   Note,
   NoteDraft,
   NoteMood,
+  NoteSummary,
   Template,
 } from "../types";
 
 interface JournalViewProps {
   activeNote: Note | null;
   activeTemplate: Template | null;
-  dashboard: DashboardResponse;
+  assets: Asset[];
   draft: NoteDraft | null;
   formatDate: (value: string, language: AppLanguage) => string;
   journalAlignMode: JournalAlignMode;
@@ -44,20 +45,22 @@ interface JournalViewProps {
   setJournalFontMode: Dispatch<SetStateAction<JournalFontMode>>;
   setJournalInspectorTab: Dispatch<SetStateAction<JournalInspectorTab>>;
   setJournalInspectorVisible: Dispatch<SetStateAction<boolean>>;
+  spotlightImage: string;
   statusLabel: (status: Note["status"]) => string;
   t: Messages;
-  visibleNotes: Note[];
+  templates: Template[];
+  visibleNotes: NoteSummary[];
   onArchive: () => void;
   onCreateNote: () => void;
   onSave: () => void;
-  onSelectNote: (note: Note) => void;
+  onSelectNote: (note: NoteSummary) => void;
   onToggleFavorite: () => void;
 }
 
 export function JournalView({
   activeNote,
   activeTemplate,
-  dashboard,
+  assets,
   draft,
   formatDate,
   journalAlignMode,
@@ -74,8 +77,10 @@ export function JournalView({
   setJournalFontMode,
   setJournalInspectorTab,
   setJournalInspectorVisible,
+  spotlightImage,
   statusLabel,
   t,
+  templates,
   visibleNotes,
   onArchive,
   onCreateNote,
@@ -84,7 +89,7 @@ export function JournalView({
   onToggleFavorite,
 }: JournalViewProps) {
   const pageImage =
-    activeNote?.coverImage ?? activeTemplate?.previewImage ?? dashboard.spotlight.image;
+    activeNote?.coverImage ?? activeTemplate?.previewImage ?? spotlightImage;
 
   return (
     <div className="flex min-h-screen animate-in fade-in duration-500">
@@ -311,7 +316,7 @@ export function JournalView({
                       value={draft.templateId}
                       onChange={(e) => setDraft(current => current ? {...current, templateId: e.target.value} : null)}
                     >
-                      {dashboard.templates.map(tmp => <option key={tmp.id} value={tmp.id}>{tmp.name}</option>)}
+                      {templates.map(tmp => <option key={tmp.id} value={tmp.id}>{tmp.name}</option>)}
                     </select>
                   </div>
                 </div>
@@ -403,7 +408,7 @@ export function JournalView({
                     >
                       <div className="flex gap-4">
                         <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
-                          <img alt={note.title} className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all" src={note.coverImage || dashboard.spotlight.image} />
+                          <img alt={note.title} className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all" src={note.coverImage || spotlightImage} />
                         </div>
                         <div className="space-y-1">
                           <h5 className="font-headline font-bold text-on-surface group-hover:text-primary transition-colors">{note.title}</h5>
@@ -453,7 +458,7 @@ export function JournalView({
               </div>
 
               <div className="grid grid-cols-1 gap-6">
-                {dashboard.assets.map(asset => (
+                {assets.map(asset => (
                   <article key={asset.id} className="group relative rounded-3xl overflow-hidden vellum-shadow border border-outline-variant/10">
                     <img alt={asset.name} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" src={asset.image} />
                     <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent text-white">

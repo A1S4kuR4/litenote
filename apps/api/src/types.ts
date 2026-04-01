@@ -17,6 +17,20 @@ export interface Note {
   updatedAt: string;
 }
 
+export interface NoteSummary {
+  id: string;
+  title: string;
+  summary: string;
+  tags: string[];
+  mood: NoteMood;
+  templateId: string;
+  coverImage: string;
+  isFavorite: boolean;
+  isArchived: boolean;
+  status: NoteStatus;
+  updatedAt: string;
+}
+
 export interface Template {
   id: string;
   name: string;
@@ -93,4 +107,31 @@ export interface CreateNoteInput {
 export interface UpdateNoteInput extends CreateNoteInput {
   isFavorite?: boolean;
   isArchived?: boolean;
+}
+
+export interface NoteListQuery {
+  query?: string;
+  status?: NoteStatus;
+  favorite?: boolean;
+  archived?: boolean;
+  tag?: string;
+  templateId?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface TemplateListQuery {
+  featured?: boolean;
+  limit?: number;
+}
+
+export interface AssetListQuery {
+  category?: string;
+  query?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface WorkshopPresetListQuery {
+  limit?: number;
 }

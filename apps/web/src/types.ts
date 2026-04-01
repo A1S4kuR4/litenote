@@ -30,6 +30,20 @@ export interface Note {
   updatedAt: string;
 }
 
+export interface NoteSummary {
+  id: string;
+  title: string;
+  summary: string;
+  tags: string[];
+  mood: NoteMood;
+  templateId: string;
+  coverImage: string;
+  isFavorite: boolean;
+  isArchived: boolean;
+  status: NoteStatus;
+  updatedAt: string;
+}
+
 export interface Template {
   id: string;
   name: string;
