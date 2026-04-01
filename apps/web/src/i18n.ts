@@ -34,13 +34,13 @@ export const messages = {
       openWorkshop: "进入工作台",
     },
     viewTitles: {
-      discover: "灵感发现",
+      discover: "探索广场",
       journal: "写作桌面",
       library: "素材图书馆",
       workshop: "样式工作台",
       settings: "设置",
     },
-    topbarEyebrow: "参考稿高保真重建",
+    topbarEyebrow: "LITENOTE STUDIO",
     searchPlaceholder: "搜索笔记或标签",
     loadingWorkspace: "正在加载 LiteNote 工作区...",
     errors: {
@@ -56,7 +56,7 @@ export const messages = {
       trendingStyles: "热门风格",
       writingCue: "写作提示",
       heroHeadline: "为你的写作桌面挑选一套有温度的版式语言",
-      galleryLead: "把参考稿的编辑气质带回 LiteNote，同时保留真实数据与工作流。",
+      galleryLead: "将高保真排版系统与数字化工作流完美结合，在 LiteNote 中体验触手可及的编辑美学。",
       stats: {
         savedNotes: "笔记数量",
         publishedPieces: "已发布内容",
@@ -180,7 +180,7 @@ export const messages = {
       workshop: "Style Workshop",
       settings: "Settings",
     },
-    topbarEyebrow: "Reference-driven rebuild",
+    topbarEyebrow: "LITENOTE STUDIO",
     searchPlaceholder: "Search notes or tags",
     loadingWorkspace: "Loading LiteNote workspace...",
     errors: {
@@ -197,7 +197,7 @@ export const messages = {
       writingCue: "Writing cue",
       heroHeadline: "Curated aesthetics for your writing desk",
       galleryLead:
-        "Bring the editorial atmosphere of the reference build into LiteNote while keeping the real workflow intact.",
+        "Seamlessly integrating high-fidelity editorial systems with digital workflows. Experience professional-grade aesthetics accessible within LiteNote.",
       stats: {
         savedNotes: "Saved Notes",
         publishedPieces: "Published Pieces",

@@ -119,10 +119,12 @@ export function AppShell({
         {/* Topbar */}
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-outline-variant/5 bg-surface/80 px-8 py-4 backdrop-blur-md">
           <div className="flex flex-col">
-            <span className="font-label text-[10px] font-bold uppercase tracking-[0.2em] text-primary/60">
+            <span className="font-label text-[10px] font-bold uppercase tracking-[0.2em] text-primary/60 leading-tight">
               {topbarEyebrow}
             </span>
-            <h2 className="font-headline text-lg italic text-primary">{title}</h2>
+            <h2 className="font-headline text-lg italic text-primary transition-all">
+              {title}
+            </h2>
           </div>
 
           <div className="flex items-center gap-6">
@@ -163,8 +165,8 @@ export function AppShell({
         {/* Content */}
         <main className="min-h-screen">
           <div className={cn(
-            "mx-auto max-w-7xl px-8 py-8",
-            (view === 'workshop' || view === 'journal') && "max-w-none p-0"
+            "px-8 py-8 transition-all duration-700",
+            (view === 'workshop' || view === 'journal' || view === 'library') ? "max-w-none mx-0" : "max-w-7xl mx-auto"
           )}>
             {children}
           </div>
