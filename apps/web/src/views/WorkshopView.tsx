@@ -42,11 +42,9 @@ export function WorkshopView({
   return (
     <section className="workshop-layout">
       <div className="workshop-column surface-card">
-        <div className="workshop-header">
-          <div>
-            <p className="eyebrow">{t.workshop.presetLab}</p>
-            <h3>{activePreset.name}</h3>
-            <p>{activePreset.summary}</p>
+        <header className="p-10 px-12 pb-2">
+          <div className="flex-1">
+            <h3 className="studio-title">{activePreset.name}</h3>
           </div>
 
           <div className="workshop-tab-row">
@@ -61,7 +59,7 @@ export function WorkshopView({
               </button>
             ))}
           </div>
-        </div>
+        </header>
 
         <div className="workshop-code-panel">
           <div className="workshop-code-header">

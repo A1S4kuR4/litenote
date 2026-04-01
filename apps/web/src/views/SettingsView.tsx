@@ -17,10 +17,10 @@ export function SettingsView({
   return (
     <section className="settings-layout">
       <section className="surface-card settings-main">
-        <div className="panel-header">
-          <div>
-            <p className="eyebrow">{t.settings.eyebrow}</p>
-            <h3>{t.settings.title}</h3>
+        <header className="p-10 px-12 pb-2">
+          <div className="flex-1">
+            <h3 className="studio-title">{t.settings.title}</h3>
+            <p className="studio-lead">{t.settings.description}</p>
           </div>
           <div className="settings-badge">
             <Languages size={16} />
@@ -29,7 +29,7 @@ export function SettingsView({
               {language === "zh" ? t.settings.chinese : t.settings.english}
             </span>
           </div>
-        </div>
+        </header>
 
         <p className="settings-copy">{t.settings.description}</p>
 

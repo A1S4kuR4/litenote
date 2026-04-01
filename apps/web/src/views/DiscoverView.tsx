@@ -16,14 +16,13 @@ export function DiscoverView({
   t,
 }: DiscoverViewProps) {
   return (
-    <div className="space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+
       {/* Hero Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center bg-surface-container-lowest rounded-3xl overflow-hidden vellum-shadow border border-outline-variant/5">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center bg-surface-container-lowest rounded-[32px] overflow-hidden vellum-shadow border border-outline-variant/10">
         <div className="lg:col-span-6 p-12 lg:p-16 space-y-8">
           <div className="space-y-4">
-            <span className="font-label uppercase tracking-[0.2em] text-[10px] font-bold text-primary">
-              {t.discover.spotlight}
-            </span>
+            {/* Removed redundant spotlight label */}
             <h2 className="font-headline text-5xl md:text-6xl font-bold leading-[1.1] text-on-surface">
               {t.discover.heroHeadline}
             </h2>
@@ -87,10 +86,7 @@ export function DiscoverView({
       <section className="space-y-8 pb-12">
         <div className="flex justify-between items-end">
           <div className="space-y-1">
-            <span className="font-label uppercase tracking-widest text-[10px] font-bold text-primary">
-              {t.discover.featuredLayouts}
-            </span>
-            <h3 className="font-headline text-3xl font-bold">{t.discover.trendingStyles}</h3>
+            <h3 className="font-headline text-4xl font-bold tracking-tight">{t.discover.trendingStyles}</h3>
           </div>
           <button 
             className="font-label text-[10px] font-bold uppercase tracking-widest text-primary hover:underline"
