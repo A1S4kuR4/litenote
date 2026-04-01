@@ -1,6 +1,5 @@
 import { ArrowRight } from "lucide-react";
 import type { Messages } from "../i18n";
-import { cn } from "../lib/utils";
 import type { DashboardResponse } from "../types";
 
 interface DiscoverViewProps {
