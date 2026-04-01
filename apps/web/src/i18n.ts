@@ -1,6 +1,6 @@
 import type { AppLanguage } from "./types";
 
-export const messages: Record<AppLanguage, any> = {
+export const messages = {
   zh: {
     sidebarKicker: "LiteNote Studio",
     sidebarTitle: "为专注手账打造的数字纸页。",
@@ -8,7 +8,7 @@ export const messages: Record<AppLanguage, any> = {
       discover: "发现",
       journal: "手账",
       library: "素材库",
-      workshop: "样式工坊",
+      workshop: "工作台",
       settings: "设置",
     },
     actions: {
@@ -24,15 +24,23 @@ export const messages: Record<AppLanguage, any> = {
       saving: "保存中...",
       selectLanguage: "选择语言",
       active: "当前使用",
+      openAssets: "打开素材抽屉",
+      useTemplate: "应用模板",
+      openInspector: "展开面板",
+      closeInspector: "收起面板",
+      zoomIn: "放大预览",
+      zoomOut: "缩小预览",
+      resetPreview: "重置预览",
+      openWorkshop: "进入工作台",
     },
     viewTitles: {
       discover: "灵感发现",
-      journal: "写作工作台",
-      library: "素材资产库",
-      workshop: "样式工坊",
+      journal: "写作桌面",
+      library: "素材图书馆",
+      workshop: "样式工作台",
       settings: "设置",
     },
-    topbarEyebrow: "基于 reference 的重建版本",
+    topbarEyebrow: "参考稿高保真重建",
     searchPlaceholder: "搜索笔记或标签",
     loadingWorkspace: "正在加载 LiteNote 工作区...",
     errors: {
@@ -47,6 +55,8 @@ export const messages: Record<AppLanguage, any> = {
       featuredLayouts: "精选布局",
       trendingStyles: "热门风格",
       writingCue: "写作提示",
+      heroHeadline: "为你的写作桌面挑选一套有温度的版式语言",
+      galleryLead: "把参考稿的编辑气质带回 LiteNote，同时保留真实数据与工作流。",
       stats: {
         savedNotes: "笔记数量",
         publishedPieces: "已发布内容",
@@ -57,13 +67,23 @@ export const messages: Record<AppLanguage, any> = {
     library: {
       communityAssets: "社区素材",
       visualIngredients: "视觉素材",
-      readyTemplates: "现成模板",
-      applyVocabulary: "应用一套版式语言",
+      readyTemplates: "即用模板",
+      applyVocabulary: "把模板语言带回工作台",
       likesSuffix: "点赞",
+      waterfallEyebrow: "Vellum Library",
+      waterfallLead: "按氛围挑选图片、纹理与模板，作为下一篇笔记的视觉参考。",
+      readOnly: "只读素材",
     },
     workshop: {
       presetLab: "预设实验室",
-      styleWorkshop: "样式工坊",
+      styleWorkshop: "样式工作台",
+      editor: "Editor",
+      history: "History",
+      variables: "Variables",
+      preview: "纸面预览",
+      quickTemplates: "Quick Templates",
+      refreshHint: "重新渲染",
+      zoom: "缩放",
     },
     journal: {
       savedNotes: "已保存笔记",
@@ -80,20 +100,35 @@ export const messages: Record<AppLanguage, any> = {
       updated: "更新时间",
       unassigned: "未分配",
       empty: "新建一条笔记开始记录。",
+      entryInfo: "条目信息",
+      visualAssets: "视觉素材",
+      fontEditorial: "衬线",
+      fontModern: "无衬线",
+      sizeComfortable: "舒展",
+      sizeImmersive: "沉浸",
+      alignLeft: "左对齐",
+      alignCenter: "居中",
+      notesShelf: "笔记书架",
+      moodBoard: "素材抽屉",
+      localStyleHint: "这些排版控制只影响当前界面展示，不会写入后端。",
+      coverFallback: "模板氛围图",
     },
     settings: {
       eyebrow: "偏好设置",
       title: "语言与界面",
-      description: "切换 LiteNote 的界面语言。当前版本会把选择保存在本地浏览器中，刷新页面后仍会保留。",
+      description:
+        "切换 LiteNote 的界面语言。当前选择会保存在浏览器本地，并在刷新后继续生效。",
       languageTitle: "显示语言",
-      languageHint: "仅切换界面文案，笔记和素材内容仍保留原始内容。",
+      languageHint: "只切换界面文案，笔记与素材内容保持原始语言。",
       chinese: "简体中文",
       english: "English",
       currentValue: "当前语言",
-      persistenceTitle: "持久化说明",
-      persistenceBody: "语言设置保存在浏览器本地存储中，不依赖后端接口即可生效。",
+      persistenceTitle: "本地持久化",
+      persistenceBody:
+        "语言设置保存在 localStorage 中，不需要任何额外接口即可立即生效。",
       architectureTitle: "当前项目形态",
-      architectureBody: "前端为 React + Vite，后端为 Express API；本页面用于集中管理后续偏好项。",
+      architectureBody:
+        "前端使用 React + Vite，后端为 Express API。本页保留原有功能，只做视觉收口。",
     },
     statuses: {
       draft: "草稿",
@@ -129,6 +164,14 @@ export const messages: Record<AppLanguage, any> = {
       saving: "Saving...",
       selectLanguage: "Choose language",
       active: "Active",
+      openAssets: "Open asset drawer",
+      useTemplate: "Use template",
+      openInspector: "Open panel",
+      closeInspector: "Close panel",
+      zoomIn: "Zoom in",
+      zoomOut: "Zoom out",
+      resetPreview: "Reset preview",
+      openWorkshop: "Open workshop",
     },
     viewTitles: {
       discover: "Curated Aesthetics",
@@ -152,6 +195,9 @@ export const messages: Record<AppLanguage, any> = {
       featuredLayouts: "Featured layouts",
       trendingStyles: "Trending styles",
       writingCue: "Writing cue",
+      heroHeadline: "Curated aesthetics for your writing desk",
+      galleryLead:
+        "Bring the editorial atmosphere of the reference build into LiteNote while keeping the real workflow intact.",
       stats: {
         savedNotes: "Saved Notes",
         publishedPieces: "Published Pieces",
@@ -163,12 +209,23 @@ export const messages: Record<AppLanguage, any> = {
       communityAssets: "Community assets",
       visualIngredients: "Visual ingredients",
       readyTemplates: "Ready-made templates",
-      applyVocabulary: "Apply a layout vocabulary",
+      applyVocabulary: "Bring a layout language back to the desk",
       likesSuffix: "likes",
+      waterfallEyebrow: "Vellum Library",
+      waterfallLead:
+        "Browse imagery, textures, and layouts by mood before bringing them back into the writing desk.",
+      readOnly: "Read-only asset",
     },
     workshop: {
       presetLab: "Preset laboratory",
       styleWorkshop: "Style workshop",
+      editor: "Editor",
+      history: "History",
+      variables: "Variables",
+      preview: "Paper preview",
+      quickTemplates: "Quick Templates",
+      refreshHint: "Rerender",
+      zoom: "Zoom",
     },
     journal: {
       savedNotes: "Saved notes",
@@ -185,20 +242,37 @@ export const messages: Record<AppLanguage, any> = {
       updated: "Updated",
       unassigned: "Unassigned",
       empty: "Create a note to start writing.",
+      entryInfo: "Entry Info",
+      visualAssets: "Visual Assets",
+      fontEditorial: "Serif",
+      fontModern: "Sans",
+      sizeComfortable: "Comfortable",
+      sizeImmersive: "Immersive",
+      alignLeft: "Left",
+      alignCenter: "Center",
+      notesShelf: "Notes shelf",
+      moodBoard: "Asset drawer",
+      localStyleHint:
+        "These editorial controls affect only the local presentation layer and do not change stored note data.",
+      coverFallback: "Template atmosphere",
     },
     settings: {
       eyebrow: "Preferences",
       title: "Language and interface",
-      description: "Switch the LiteNote UI language. The current choice is stored locally in the browser and survives refresh.",
+      description:
+        "Switch the LiteNote UI language. The current choice is stored locally in the browser and survives refresh.",
       languageTitle: "Display language",
-      languageHint: "Only the product interface changes. Existing notes and asset content keep their original language.",
+      languageHint:
+        "Only the product interface changes. Existing notes and asset content keep their original language.",
       chinese: "Simplified Chinese",
       english: "English",
       currentValue: "Current language",
       persistenceTitle: "Persistence",
-      persistenceBody: "The selected language is stored in localStorage and does not require a backend round-trip.",
+      persistenceBody:
+        "The selected language is stored in localStorage and does not require a backend round-trip.",
       architectureTitle: "Current project shape",
-      architectureBody: "The frontend runs on React + Vite and the backend runs on Express API; this page is ready for more preferences later.",
+      architectureBody:
+        "The frontend runs on React + Vite and the backend runs on Express API; this page only refines the visual shell.",
     },
     statuses: {
       draft: "Draft",
@@ -211,4 +285,6 @@ export const messages: Record<AppLanguage, any> = {
       reflective: "Reflective",
     },
   },
-};
+} satisfies Record<AppLanguage, object>;
+
+export type Messages = (typeof messages)["en"];
