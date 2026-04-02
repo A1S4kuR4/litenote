@@ -56,6 +56,7 @@ const draftToPayload = (draft: NoteDraft) => ({
     .filter(Boolean),
   mood: draft.mood,
   templateId: draft.templateId,
+  coverImage: draft.coverImage,
   status: draft.status,
 });
 
@@ -130,6 +131,7 @@ export const createNote = (draft?: Partial<NoteDraft>) =>
             tags: draft.tags ?? "",
             mood: draft.mood ?? "calm",
             templateId: draft.templateId ?? "botanical-reflection",
+            coverImage: draft.coverImage ?? "",
             status: draft.status ?? "draft",
           })
         : {},

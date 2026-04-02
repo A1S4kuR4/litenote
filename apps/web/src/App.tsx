@@ -13,7 +13,6 @@ import {
   updateNote,
 } from "./api";
 import { messages } from "./i18n";
-import type { Messages } from "./i18n";
 import { AppShell } from "./components/AppShell";
 import { DiscoverView } from "./views/DiscoverView";
 import { JournalView } from "./views/JournalView";
@@ -40,7 +39,12 @@ import type {
 
 const LANGUAGE_STORAGE_KEY = "litenote-language";
 
-type ErrorKey = keyof Messages["errors"] | "";
+type NoticeTone = "success" | "error" | "info";
+type Notice = {
+  tone: NoticeTone;
+  message: string;
+};
+type NoteBusyAction = "create" | "save" | "favorite" | "archive" | "apply-asset";
 
 function toDraft(note: Note): NoteDraft {
   return {
@@ -49,8 +53,31 @@ function toDraft(note: Note): NoteDraft {
     tags: note.tags.join(", "),
     mood: note.mood,
     templateId: note.templateId,
+    coverImage: note.coverImage,
     status: note.status,
   };
+}
+
+function normalizeTags(value: string): string[] {
+  return value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
+function matchesDraftToNote(note: Note, draft: NoteDraft): boolean {
+  const noteTags = [...note.tags].sort().join("|");
+  const draftTags = [...normalizeTags(draft.tags)].sort().join("|");
+
+  return (
+    note.title === draft.title &&
+    note.body === draft.body &&
+    note.mood === draft.mood &&
+    note.templateId === draft.templateId &&
+    note.coverImage === draft.coverImage &&
+    note.status === draft.status &&
+    noteTags === draftTags
+  );
 }
 
 function formatDate(value: string, language: AppLanguage): string {
@@ -117,6 +144,10 @@ function syncDashboardWithNote(
   };
 }
 
+function buildDefaultTitle(language: AppLanguage): string {
+  return language === "zh" ? "新的编辑条目" : "New editorial entry";
+}
+
 export default function App() {
   const [view, setView] = useState<AppView>("discover");
   const [language, setLanguage] = useState<AppLanguage>(readInitialLanguage);
@@ -129,9 +160,13 @@ export default function App() {
   const [selectedNoteId, setSelectedNoteId] = useState("");
   const [draft, setDraft] = useState<NoteDraft | null>(null);
   const [search, setSearch] = useState("");
-  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [errorKey, setErrorKey] = useState<ErrorKey>("");
+  const [isRefreshingWorkspace, setIsRefreshingWorkspace] = useState(false);
+  const [noteBusyAction, setNoteBusyAction] = useState<NoteBusyAction | null>(null);
+  const [selectedAssetId, setSelectedAssetId] = useState("");
+  const [selectedAssetCategory, setSelectedAssetCategory] = useState("all");
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [isSaveSuccessful, setIsSaveSuccessful] = useState(false);
   const [journalInspectorTab, setJournalInspectorTab] =
     useState<JournalInspectorTab>("entry-info");
   const [journalInspectorVisible, setJournalInspectorVisible] = useState(true);
@@ -144,10 +179,12 @@ export default function App() {
   const [selectedPresetId, setSelectedPresetId] = useState("");
   const [previewZoom, setPreviewZoom] = useState<PreviewZoomLevel>(100);
   const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
+  const [isPreviewRefreshing, setIsPreviewRefreshing] = useState(false);
   const deferredSearch = useDeferredValue(search);
   const hasLoadedWorkspaceRef = useRef(false);
   const notesRequestRef = useRef(0);
   const noteRequestRef = useRef(0);
+  const previewRefreshTimeoutRef = useRef<number | null>(null);
 
   const t = messages[language];
 
@@ -156,10 +193,96 @@ export default function App() {
     document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
   }, [language]);
 
+  useEffect(() => {
+    if (!notice) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setNotice(null);
+    }, 2500);
+
+    return () => window.clearTimeout(timeout);
+  }, [notice]);
+
+  useEffect(() => {
+    if (!isSaveSuccessful) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setIsSaveSuccessful(false);
+    }, 1600);
+
+    return () => window.clearTimeout(timeout);
+  }, [isSaveSuccessful]);
+
+  useEffect(
+    () => () => {
+      if (previewRefreshTimeoutRef.current) {
+        window.clearTimeout(previewRefreshTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
+  const activeTemplate = useMemo(
+    () =>
+      templates.find(
+        (template) => template.id === (draft?.templateId ?? activeNote?.templateId),
+      ) ?? null,
+    [activeNote, draft, templates],
+  );
+
+  const activePreset =
+    workshopPresets.find((preset) => preset.id === selectedPresetId) ??
+    workshopPresets[0] ??
+    null;
+
+  const filteredAssets = useMemo(() => {
+    if (selectedAssetCategory === "all") {
+      return assets;
+    }
+
+    return assets.filter((asset) => asset.category === selectedAssetCategory);
+  }, [assets, selectedAssetCategory]);
+
+  const currentCoverImage =
+    draft?.coverImage ??
+    activeNote?.coverImage ??
+    activeTemplate?.previewImage ??
+    dashboard?.spotlight.image ??
+    "";
+
+  const isDirty = useMemo(() => {
+    if (!activeNote || !draft) {
+      return false;
+    }
+
+    return !matchesDraftToNote(activeNote, draft);
+  }, [activeNote, draft]);
+
+  useEffect(() => {
+    if (isDirty) {
+      setIsSaveSuccessful(false);
+    }
+  }, [isDirty]);
+
+  useEffect(() => {
+    if (!filteredAssets.some((asset) => asset.id === selectedAssetId)) {
+      setSelectedAssetId("");
+    }
+  }, [filteredAssets, selectedAssetId]);
+
+  const showNotice = (tone: NoticeTone, message: string) => {
+    setNotice({ tone, message });
+  };
+
   const clearActiveNote = () => {
     setSelectedNoteId("");
     setActiveNote(null);
     setDraft(null);
+    setIsSaveSuccessful(false);
   };
 
   const loadNoteById = async (noteId: string) => {
@@ -180,11 +303,10 @@ export default function App() {
       setSelectedNoteId(note.id);
       setActiveNote(note);
       setDraft(toDraft(note));
-      setErrorKey("");
       return note;
     } catch {
       if (requestId === noteRequestRef.current) {
-        setErrorKey("apiUnavailable");
+        showNotice("error", t.errors.apiUnavailable);
       }
 
       return null;
@@ -210,7 +332,6 @@ export default function App() {
       }
 
       setNotes(nextNotes);
-      setErrorKey("");
 
       if (!options.syncSelection) {
         return nextNotes;
@@ -237,16 +358,26 @@ export default function App() {
       return nextNotes;
     } catch {
       if (requestId === notesRequestRef.current) {
-        setErrorKey("apiUnavailable");
+        showNotice("error", t.errors.apiUnavailable);
       }
 
       return [];
     }
   };
 
-  const loadWorkspace = async (preferredNoteId?: string) => {
-    setLoading(true);
-    setErrorKey("");
+  const loadWorkspace = async (
+    preferredNoteId?: string,
+    options: { asRefresh?: boolean } = {},
+  ) => {
+    const isInitialLoad = !hasLoadedWorkspaceRef.current;
+
+    if (isInitialLoad) {
+      setLoading(true);
+    }
+
+    if (options.asRefresh) {
+      setIsRefreshingWorkspace(true);
+    }
 
     try {
       const [
@@ -283,10 +414,20 @@ export default function App() {
       } else {
         clearActiveNote();
       }
+
+      if (options.asRefresh) {
+        showNotice("info", t.notices.workspaceRefreshed);
+      }
     } catch {
-      setErrorKey("apiUnavailable");
+      showNotice("error", t.errors.apiUnavailable);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
+
+      if (options.asRefresh) {
+        setIsRefreshingWorkspace(false);
+      }
     }
   };
 
@@ -315,44 +456,33 @@ export default function App() {
     );
   }, [workshopPresets]);
 
-  const activeTemplate = useMemo(
-    () =>
-      templates.find(
-        (template) => template.id === (draft?.templateId ?? activeNote?.templateId),
-      ) ?? null,
-    [activeNote, draft, templates],
-  );
-
-  const activePreset =
-    workshopPresets.find((preset) => preset.id === selectedPresetId) ??
-    workshopPresets[0] ??
-    null;
-
   const statusLabel = (status: Note["status"]) =>
     status === "draft" ? t.statuses.draft : t.statuses.published;
 
   const moodLabel = (mood: NoteMood) => t.moods[mood];
 
-  const handleSelectNote = (note: NoteSummary) => {
-    setView("journal");
-    setSelectedNoteId(note.id);
-    setActiveNote(null);
-    setDraft(null);
-    setJournalInspectorTab("entry-info");
-    setJournalInspectorVisible(true);
-    void loadNoteById(note.id);
-  };
+  const isAnyNoteActionBusy = noteBusyAction !== null;
 
-  const handleCreateNote = async (templateId?: string) => {
-    setSaving(true);
+  const createNoteEntry = async (options: {
+    templateId?: string;
+    coverImage?: string;
+    busyAction: NoteBusyAction;
+    successNotice?: string;
+    inspectorTab?: JournalInspectorTab;
+  }) => {
+    const template =
+      templates.find((item) => item.id === options.templateId) ?? templates[0] ?? null;
+
+    setNoteBusyAction(options.busyAction);
 
     try {
       const note = await createNote({
-        title: language === "zh" ? "新的编辑条目" : "New editorial entry",
+        title: buildDefaultTitle(language),
         body: "",
         mood: "calm",
         status: "draft",
-        templateId: templateId ?? templates[0]?.id,
+        templateId: options.templateId ?? template?.id,
+        coverImage: options.coverImage ?? template?.previewImage ?? "",
       });
 
       setSelectedNoteId(note.id);
@@ -361,22 +491,49 @@ export default function App() {
       setDashboard((current) => syncDashboardWithNote(current, note));
       await loadVisibleNotes(deferredSearch);
       setView("journal");
-      setJournalInspectorTab("entry-info");
       setJournalInspectorVisible(true);
+      setJournalInspectorTab(options.inspectorTab ?? "entry-info");
+      setIsSaveSuccessful(false);
+
+      if (options.successNotice) {
+        showNotice("success", options.successNotice);
+      }
     } catch {
-      setErrorKey("createFailed");
+      showNotice("error", t.errors.createFailed);
     } finally {
-      setSaving(false);
+      setNoteBusyAction(null);
     }
   };
 
+  const handleSelectNote = (note: NoteSummary) => {
+    setView("journal");
+    setSelectedNoteId(note.id);
+    setActiveNote(null);
+    setDraft(null);
+    setIsSaveSuccessful(false);
+    setJournalInspectorTab("entry-info");
+    setJournalInspectorVisible(true);
+    void loadNoteById(note.id);
+  };
+
+  const handleCreateNote = async (templateId?: string) => {
+    const template =
+      templates.find((item) => item.id === templateId) ?? templates[0] ?? null;
+
+    await createNoteEntry({
+      templateId: template?.id,
+      coverImage: template?.previewImage ?? "",
+      busyAction: "create",
+      inspectorTab: "entry-info",
+    });
+  };
+
   const handleSave = async () => {
-    if (!activeNote || !draft) {
+    if (!activeNote || !draft || !isDirty) {
       return;
     }
 
-    setSaving(true);
-    setErrorKey("");
+    setNoteBusyAction("save");
 
     try {
       const note = await updateNote(activeNote.id, draft);
@@ -384,10 +541,12 @@ export default function App() {
       setDraft(toDraft(note));
       setDashboard((current) => syncDashboardWithNote(current, note));
       await loadVisibleNotes(deferredSearch);
+      setIsSaveSuccessful(true);
+      showNotice("success", t.notices.noteSaved);
     } catch {
-      setErrorKey("saveFailed");
+      showNotice("error", t.errors.saveFailed);
     } finally {
-      setSaving(false);
+      setNoteBusyAction(null);
     }
   };
 
@@ -396,36 +555,36 @@ export default function App() {
       return;
     }
 
-    setSaving(true);
+    setNoteBusyAction("favorite");
 
     try {
       const note = await toggleFavorite(activeNote.id);
       setActiveNote(note);
-      setDraft(toDraft(note));
       setDashboard((current) => syncDashboardWithNote(current, note));
       await loadVisibleNotes(deferredSearch);
     } catch {
-      setErrorKey("favoriteFailed");
+      showNotice("error", t.errors.favoriteFailed);
     } finally {
-      setSaving(false);
+      setNoteBusyAction(null);
     }
   };
 
   const handleArchive = async () => {
-    if (!activeNote) {
+    if (!activeNote || isDirty) {
       return;
     }
 
-    setSaving(true);
+    setNoteBusyAction("archive");
 
     try {
       const note = await archiveNote(activeNote.id);
       setDashboard((current) => syncDashboardWithNote(current, note));
       await loadVisibleNotes(deferredSearch, { syncSelection: true });
+      setIsSaveSuccessful(false);
     } catch {
-      setErrorKey("archiveFailed");
+      showNotice("error", t.errors.archiveFailed);
     } finally {
-      setSaving(false);
+      setNoteBusyAction(null);
     }
   };
 
@@ -435,17 +594,58 @@ export default function App() {
     setJournalInspectorVisible(true);
 
     if (draft) {
-      setDraft({ ...draft, templateId });
+      setDraft((current) =>
+        current
+          ? {
+              ...current,
+              templateId,
+            }
+          : current,
+      );
       return;
     }
 
     await handleCreateNote(templateId);
   };
 
-  const handleFocusAssets = () => {
+  const handleApplyAsset = async (asset: Asset) => {
+    setSelectedAssetId(asset.id);
     setView("journal");
     setJournalInspectorVisible(true);
     setJournalInspectorTab("visual-assets");
+
+    if (draft && activeNote) {
+      setDraft((current) =>
+        current
+          ? {
+              ...current,
+              coverImage: asset.image,
+            }
+          : current,
+      );
+      showNotice("success", t.notices.coverUpdated);
+      return;
+    }
+
+    await createNoteEntry({
+      coverImage: asset.image,
+      busyAction: "apply-asset",
+      successNotice: t.notices.coverAppliedToNewNote,
+      inspectorTab: "visual-assets",
+    });
+  };
+
+  const handleRefreshPreview = () => {
+    setPreviewRefreshKey((current) => current + 1);
+    setIsPreviewRefreshing(true);
+
+    if (previewRefreshTimeoutRef.current) {
+      window.clearTimeout(previewRefreshTimeoutRef.current);
+    }
+
+    previewRefreshTimeoutRef.current = window.setTimeout(() => {
+      setIsPreviewRefreshing(false);
+    }, 700);
   };
 
   const handleZoomIn = () => {
@@ -453,7 +653,12 @@ export default function App() {
       if (current === 100) {
         return 125;
       }
-      return 150;
+
+      if (current === 125) {
+        return 150;
+      }
+
+      return current;
     });
   };
 
@@ -462,19 +667,28 @@ export default function App() {
       if (current === 150) {
         return 125;
       }
-      return 100;
+
+      if (current === 125) {
+        return 100;
+      }
+
+      return current;
     });
   };
 
   return (
     <AppShell
-      composeLabel={saving ? t.actions.working : t.actions.composeNew}
+      composeDisabled={isAnyNoteActionBusy}
+      composeLabel={
+        noteBusyAction === "create" ? t.actions.working : t.actions.composeNew
+      }
+      isRefreshingWorkspace={isRefreshingWorkspace}
       navLabels={t.nav}
       onCreateNote={() => void handleCreateNote()}
-      onRefresh={() => void loadWorkspace(selectedNoteId)}
+      onRefresh={() => void loadWorkspace(selectedNoteId, { asRefresh: true })}
       onViewChange={setView}
+      refreshDisabled={isRefreshingWorkspace || isAnyNoteActionBusy}
       refreshLabel={t.actions.refresh}
-      saving={saving}
       search={search}
       searchPlaceholder={t.searchPlaceholder}
       setSearch={setSearch}
@@ -486,8 +700,8 @@ export default function App() {
       userName={dashboard?.user.name}
       view={view}
     >
-      {errorKey ? (
-        <div className="status-banner is-error">{t.errors[errorKey]}</div>
+      {notice ? (
+        <div className={`status-banner is-${notice.tone}`}>{notice.message}</div>
       ) : null}
 
       {loading && !dashboard ? (
@@ -502,6 +716,7 @@ export default function App() {
           {view === "discover" ? (
             <DiscoverView
               dashboard={dashboard}
+              onApplyTemplate={(templateId) => void handleApplyTemplate(templateId)}
               onOpenLibrary={() => setView("library")}
               onOpenWorkshop={() => setView("workshop")}
               t={t}
@@ -511,26 +726,31 @@ export default function App() {
           {view === "library" ? (
             <LibraryView
               assets={assets}
-              templates={templates}
+              currentCoverImage={currentCoverImage}
+              isApplyingAsset={noteBusyAction === "apply-asset"}
+              onApplyAsset={(asset) => void handleApplyAsset(asset)}
               onApplyTemplate={(templateId) => void handleApplyTemplate(templateId)}
-              onFocusAssets={handleFocusAssets}
+              onSelectAsset={setSelectedAssetId}
+              onSelectCategory={setSelectedAssetCategory}
+              selectedAssetCategory={selectedAssetCategory}
+              selectedAssetId={selectedAssetId}
               t={t}
+              templates={templates}
             />
           ) : null}
 
           {view === "workshop" ? (
             <WorkshopView
               activePreset={activePreset}
+              isPreviewRefreshing={isPreviewRefreshing}
+              onRefreshPreview={handleRefreshPreview}
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
               previewRefreshKey={previewRefreshKey}
               previewZoom={previewZoom}
               presets={workshopPresets}
               selectedPresetId={selectedPresetId}
               setSelectedPresetId={setSelectedPresetId}
-              onRefreshPreview={() =>
-                setPreviewRefreshKey((current) => current + 1)
-              }
-              onZoomIn={handleZoomIn}
-              onZoomOut={handleZoomOut}
               t={t}
             />
           ) : null}
@@ -539,9 +759,12 @@ export default function App() {
             <JournalView
               activeNote={activeNote}
               activeTemplate={activeTemplate}
-              assets={assets}
+              assets={filteredAssets}
+              currentCoverImage={currentCoverImage}
               draft={draft}
               formatDate={formatDate}
+              isDirty={isDirty}
+              isSaveSuccessful={isSaveSuccessful}
               journalAlignMode={journalAlignMode}
               journalDensityMode={journalDensityMode}
               journalFontMode={journalFontMode}
@@ -549,7 +772,8 @@ export default function App() {
               journalInspectorVisible={journalInspectorVisible}
               language={language}
               moodLabel={moodLabel}
-              saving={saving}
+              noteBusyAction={noteBusyAction}
+              selectedAssetId={selectedAssetId}
               setDraft={setDraft}
               setJournalAlignMode={setJournalAlignMode}
               setJournalDensityMode={setJournalDensityMode}
@@ -561,9 +785,11 @@ export default function App() {
               t={t}
               templates={templates}
               visibleNotes={notes}
+              onApplyAsset={(asset) => void handleApplyAsset(asset)}
               onArchive={() => void handleArchive()}
               onCreateNote={() => void handleCreateNote()}
               onSave={() => void handleSave()}
+              onSelectAsset={setSelectedAssetId}
               onSelectNote={handleSelectNote}
               onToggleFavorite={() => void handleToggleFavorite()}
             />

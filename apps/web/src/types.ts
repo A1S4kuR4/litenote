@@ -106,5 +106,6 @@ export interface NoteDraft {
   tags: string;
   mood: NoteMood;
   templateId: string;
+  coverImage: string;
   status: NoteStatus;
 }

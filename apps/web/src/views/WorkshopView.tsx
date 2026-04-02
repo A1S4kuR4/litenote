@@ -8,6 +8,7 @@ import type {
 
 interface WorkshopViewProps {
   activePreset: WorkshopPreset | null;
+  isPreviewRefreshing: boolean;
   previewRefreshKey: number;
   previewZoom: PreviewZoomLevel;
   presets: WorkshopPreset[];
@@ -23,6 +24,7 @@ const workshopTabs: WorkshopTab[] = ["editor", "history", "variables"];
 
 export function WorkshopView({
   activePreset,
+  isPreviewRefreshing,
   previewRefreshKey,
   previewZoom,
   presets,
@@ -38,6 +40,8 @@ export function WorkshopView({
   }
 
   const snippetLines = activePreset.cssSnippet.split("\n");
+  const canZoomOut = previewZoom > 100;
+  const canZoomIn = previewZoom < 150;
 
   return (
     <section className="workshop-layout">
@@ -48,16 +52,22 @@ export function WorkshopView({
           </div>
 
           <div className="workshop-tab-row">
-            {workshopTabs.map((tab) => (
-              <button
-                key={tab}
-                aria-disabled={tab !== "editor"}
-                className={`tab-button ${tab === "editor" ? "is-active" : "is-disabled"}`}
-                type="button"
-              >
-                {t.workshop[tab]}
-              </button>
-            ))}
+            {workshopTabs.map((tab) => {
+              const isEditor = tab === "editor";
+
+              return (
+                <button
+                  key={tab}
+                  aria-disabled={!isEditor}
+                  className={`tab-button ${isEditor ? "is-active" : "is-disabled"}`}
+                  disabled={!isEditor}
+                  title={!isEditor ? t.workshop.comingSoon : undefined}
+                  type="button"
+                >
+                  {t.workshop[tab]}
+                </button>
+              );
+            })}
           </div>
         </header>
 
@@ -86,14 +96,32 @@ export function WorkshopView({
           </div>
 
           <div className="workshop-preview-actions">
-            <button className="icon-button" onClick={onZoomOut} type="button">
+            <button
+              className="icon-button focus-ring"
+              disabled={!canZoomOut}
+              onClick={onZoomOut}
+              title={t.actions.zoomOut}
+              type="button"
+            >
               <ZoomOut size={16} />
             </button>
-            <button className="icon-button" onClick={onZoomIn} type="button">
+            <button
+              className="icon-button focus-ring"
+              disabled={!canZoomIn}
+              onClick={onZoomIn}
+              title={t.actions.zoomIn}
+              type="button"
+            >
               <ZoomIn size={16} />
             </button>
-            <button className="icon-button" onClick={onRefreshPreview} type="button">
-              <RefreshCw size={16} />
+            <button
+              className={`icon-button focus-ring ${isPreviewRefreshing ? "is-busy" : ""}`}
+              disabled={isPreviewRefreshing}
+              onClick={onRefreshPreview}
+              title={t.actions.resetPreview}
+              type="button"
+            >
+              <RefreshCw size={16} className={isPreviewRefreshing ? "animate-spin" : ""} />
             </button>
           </div>
         </div>
@@ -106,7 +134,9 @@ export function WorkshopView({
               style={{ transform: `scale(${previewZoom / 100})` }}
             >
               <div className="workshop-paper-grain" />
-              <span className="workshop-paper-date">{t.workshop.zoom}: {previewZoom}%</span>
+              <span className="workshop-paper-date">
+                {t.workshop.zoom}: {previewZoom}%
+              </span>
               <h5>{activePreset.name}</h5>
               <p>{activePreset.summary}</p>
               <blockquote>{activePreset.quote}</blockquote>
@@ -120,7 +150,7 @@ export function WorkshopView({
             {presets.map((preset) => (
               <button
                 key={preset.id}
-                className={`workshop-preset-chip ${
+                className={`workshop-preset-chip focus-ring ${
                   selectedPresetId === preset.id ? "is-active" : ""
                 }`}
                 onClick={() => setSelectedPresetId(preset.id)}
